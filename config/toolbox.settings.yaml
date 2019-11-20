@@ -17,7 +17,6 @@ config:
               config_context_prefix:
               - component
               - build
-
 tools:
   cicd/component/build:
     from:
