@@ -30,7 +30,7 @@ tasks:
 
   branch:
     script: |
-      git branch | grep \* | cut -d ' ' -f2
+      git symbolic-ref -q --short HEAD || git describe --tags --exact-match
 
   deliverables:
     parameters:
