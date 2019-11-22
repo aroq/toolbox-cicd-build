@@ -22,19 +22,93 @@ tasks:
           git config --global user.name "{{ .user_name }}"
 
           rm -fR {{ .working_dir }}
-          mkdir -p {{ .working_dir }}/config
-          cp toolbox/config/rendered/config.yaml {{ .working_dir }}/config
+          mkdir -p {{ .working_dir }}
+
+  repo:
+    script: |
+      git config --get remote.origin.url
+
+  branch:
+    script: |
+      git branch | grep \* | cut -d ' ' -f2
 
   deliverables:
     parameters:
-    - name: state
+    - name: utils.build.repo
       type: string
+      description: Current repo address
+    - name: utils.build.branch
+      type: string
+      description: Current repo address
+    - name: build
+      type: string
+      default: "pwd"
+    steps:
+    - task: utils.build.build
+      arguments:
+        repo: "{{ .utils.build.repo }}"
+        source_branch: "{{ .utils.build.branch }}"
+        target_branch: "deliverables_{{ .utils.build.branch }}"
+        buildd: "{{ .build }}"
+
+  build:
+    parameters:
+    - name: repo
+      type: string
+      default: "{{ .utils.build.repo }}"
+    - name: source_branch
+      type: string
+    - name: target_branch
+      type: string
+    - name: build
+      type: string
+      default: "pwd"
     steps:
     - task: utils.build.init
+
     - task: core.exec
       arguments:
         cmd: |
-          cd .docroot
-          docman build git_target {{ .state }}
+          git clone -b {{ .source_branch }} --single-branch --depth 1 {{ .repo }} {{ .working_dir }}/source;
+          cd {{ .working_dir }}/source;
+          git checkout {{ .source_branch }};
+
+    - task: core.exec
+      arguments:
+        cmd: |
+          cd {{ .working_dir }}/source;
+          {{ .build }}
+
+    - task: core.exec
+      arguments:
+        cmd: |
+          git clone {{ .repo }} {{ .working_dir }}/target;
+          cd {{ .working_dir }}/target;
+          (git fetch {{ .target_branch }}; git checkout {{ .target_branch }}) 2>/dev/null || (git checkout -b {{ .target_branch }}; git push origin {{ .target_branch }})
+
+    - task: core.exec
+      arguments:
+        cmd: |
+          cd {{ .working_dir }}/target;
+
+          # Find all first level files & directories except ".git" and remove it
+          fd -H -I -E .git '^.*$' -d 1 --exec rm -rf {};
+
+          cd ../..;
+
+          # Copy all files except ".git" from source dir to target dir
+          rsync -a --exclude '.git' {{ .working_dir }}/source/. {{ .working_dir }}/target;
+
+    - task: core.exec
+      arguments:
+        cmd: |
+          cd {{ .working_dir }}/target;
+          # TODO: Check if there are any changes. No need to push if no changes.
+          git add --all;
+          git commit --allow-empty --quiet --no-verify -m "Deliverables update";
+          git pull origin {{ .target_branch }};
+          git push origin {{ .target_branch }};
+
+
 
 

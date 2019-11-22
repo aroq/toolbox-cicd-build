@@ -1,25 +1,18 @@
 #!/usr/bin/env variant
 # vi: ft=yaml
 
+parameters:
+- name: build
+  type: string
+
 tasks:
   core:
     import: toolbox/.toolbox/deps/toolbox/variant-lib/utils.yaml
-
   utils:
     tasks:
       build:
         import: toolbox/.toolbox/deps/toolbox-cicd-build/variant-lib/utils.yaml
 
-  development:
-    steps:
-    - task: utils.build.deliverables
-      arguments:
-        state: development
-
-  staging:
-    steps:
-    - task: utils.build.deliverables
-      arguments:
-        state: staging
-
+steps:
+- task: utils.build.deliverables
 
