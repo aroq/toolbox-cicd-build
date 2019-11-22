@@ -3,7 +3,7 @@
 
 parameters:
 - name: working_dir
-  default: docroot
+  default: .docroot
 
 tasks:
   init:
@@ -21,6 +21,7 @@ tasks:
           git config --global user.email "{{ .user_email }}"
           git config --global user.name "{{ .user_name }}"
 
+          rm -fR {{ .working_dir }}
           mkdir -p {{ .working_dir }}/config
           cp toolbox/config/rendered/config.yaml {{ .working_dir }}/config
 
