@@ -9,7 +9,7 @@ config:
       component:
         params:
           source: github.com/aroq/toolbox-cicd-build
-          image: aroq/toolbox-cicd-build
+          image: aroq/toolbox
           tool_dirs:
           - toolbox/.toolbox/deps/toolbox-cicd-build
         commands:
