@@ -27,11 +27,11 @@ tasks:
 
   repo:
     script: |
-      if [ -z ${TOOLBOX_GITLAB_CI_RW_USER_TOKEN_+x} ]; then
+      if [ -z ${TOOLBOX_GITLAB_CI_RW_USER_TOKEN+x} ]; then
         git config --get remote.origin.url
       else
         REPO_ADDRESS_ARRAY=(${CI_REPOSITORY_URL//@/ })
-        echo "https://${TOOLBOX_GITLAB_CI_RW_USER_NAME}:${TOOLBOX_GITLAB_CI_RW_USER_TOKEN_}@${REPO_ADDRESS_ARRAY[1]}"
+        echo "https://${TOOLBOX_GITLAB_CI_RW_USER_NAME}:${TOOLBOX_GITLAB_CI_RW_USER_TOKEN}@${REPO_ADDRESS_ARRAY[1]}"
       fi
 
   branch:
