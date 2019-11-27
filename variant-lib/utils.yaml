@@ -25,7 +25,16 @@ tasks:
           rm -fR {{ .working_dir }}
           mkdir -p {{ .working_dir }}
 
-  repo:
+  source_repo:
+    script: |
+      if [ -z ${TOOLBOX_GITLAB_CI_RW_USER_TOKEN+x} ]; then
+        git config --get remote.origin.url
+      else
+        REPO_ADDRESS_ARRAY=(${CI_REPOSITORY_URL//@/ })
+        echo "https://${TOOLBOX_GITLAB_CI_RW_USER_NAME}:${TOOLBOX_GITLAB_CI_RW_USER_TOKEN}@${REPO_ADDRESS_ARRAY[1]}"
+      fi
+
+  target_repo:
     script: |
       if [ -z ${TOOLBOX_GITLAB_CI_RW_USER_TOKEN+x} ]; then
         git config --get remote.origin.url
@@ -40,7 +49,9 @@ tasks:
 
   deliverables:
     parameters:
-    - name: utils.build.repo
+    - name: utils.build.source_repo
+      type: string
+    - name: utils.build.target_repo
       type: string
       description: Current repo address
     - name: utils.build.branch
@@ -55,11 +66,11 @@ tasks:
         - task: utils.build.init
         - task: utils.build.commands.prepare.source
           arguments:
-            repo: "{{ .utils.build.repo }}"
+            source_repo: "{{ .utils.build.source_repo }}"
             source_ref: "{{ .utils.build.branch }}"
         - task: utils.build.commands.prepare.target
           arguments:
-            repo: "{{ .utils.build.repo }}"
+            target_repo: "{{ .utils.build.target_repo }}"
             target_ref: "deliverables_{{ .utils.build.branch }}"
         - task: utils.build.commands.build
         - task: utils.build.commands.copy_source_to_target
@@ -72,11 +83,11 @@ tasks:
         - task: utils.build.init
         - task: utils.build.commands.prepare.source
           arguments:
-            repo: "{{ .utils.build.repo }}"
+            source_repo: "{{ .utils.build.source_repo }}"
             source_ref: "{{ .utils.build.branch }}"
         - task: utils.build.commands.prepare.target
           arguments:
-            repo: "{{ .utils.build.repo }}"
+            target_repo: "{{ .utils.build.target_repo }}"
             target_ref: "deliverables_tags"
         - task: utils.build.commands.build
         - task: utils.build.commands.copy_source_to_target
@@ -89,7 +100,10 @@ tasks:
 
   commands:
     parameters:
-    - name: repo
+    - name: source_repo
+      type: string
+      default: ""
+    - name: target_repo
       type: string
       default: ""
     - name: source_ref
@@ -110,7 +124,7 @@ tasks:
               arguments:
                 title: Prepare source
                 cmd: |
-                  git clone -b {{ .source_ref }} --single-branch --depth 1 {{ .repo }} {{ .working_dir }}/source;
+                  git clone -b {{ .source_ref }} --single-branch --depth 1 {{ .source_repo }} {{ .working_dir }}/source;
                   cd {{ .working_dir }}/source;
                   git checkout {{ .source_ref }};
 
@@ -120,7 +134,7 @@ tasks:
               arguments:
                 title: Prepare target
                 cmd: |
-                  git clone {{ .repo }} {{ .working_dir }}/target;
+                  git clone {{ .target_repo }} {{ .working_dir }}/target;
                   cd {{ .working_dir }}/target;
                   git checkout {{ .target_ref }} 2>/dev/null || (git checkout -b {{ .target_ref }}; \
                     git push origin {{ .target_ref }})
@@ -172,5 +186,6 @@ tasks:
             cmd: |
               cd {{ .working_dir }}/target;
               git tag "{{ .target_ref }}"
-              git push origin {{ .target_ref }};
+              git push origin {{ .target_ref }}
+
 
