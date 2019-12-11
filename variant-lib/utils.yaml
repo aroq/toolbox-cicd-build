@@ -45,7 +45,11 @@ tasks:
 
   branch:
     script: |
-      git symbolic-ref -q --short HEAD || git describe --tags --exact-match
+      git symbolic-ref -q --short HEAD
+
+  tag:
+    script: |
+      git describe --exact-match --all $(git rev-parse --verify HEAD) | sed -e 's/^tags\///' -e 's/^heads\///'
 
   deliverables:
     parameters:
@@ -56,7 +60,8 @@ tasks:
       description: Current repo address
     - name: utils.build.branch
       type: string
-      description: Current repo address
+    - name: utils.build.tag
+      type: string
     - name: build
       type: string
       default: "pwd"
@@ -84,7 +89,7 @@ tasks:
         - task: utils.build.commands.prepare.source
           arguments:
             source_repo: "{{ .utils.build.source_repo }}"
-            source_ref: "{{ .utils.build.branch }}"
+            source_ref: "{{ .utils.build.tag }}"
         - task: utils.build.commands.prepare.target
           arguments:
             target_repo: "{{ .utils.build.target_repo }}"
@@ -96,7 +101,7 @@ tasks:
             target_ref: "deliverables_tags"
         - task: utils.build.commands.push_tag
           arguments:
-            target_ref: "stable--{{ .utils.build.branch }}"
+            target_ref: "stable--{{ .utils.build.tag }}"
 
   commands:
     parameters:
