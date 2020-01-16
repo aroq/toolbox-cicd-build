@@ -6,7 +6,6 @@ parameters:
   default: .docroot
 
 tasks:
-
   source_repo:
     script: |
       if [ -z ${TOOLBOX_GITLAB_CI_RW_USER_TOKEN+x} ]; then
@@ -167,3 +166,4 @@ tasks:
               cd {{ .working_dir }}/target;
               git tag "{{ .target_ref }}"
               git push origin {{ .target_ref }}
+
