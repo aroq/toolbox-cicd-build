@@ -38,9 +38,8 @@ tasks:
     - name: utils.branch
       type: string
       description: Current repo address
-    - name: build
+    - name: build_cmd
       type: string
-      default: "pwd"
     tasks:
       branch:
         steps:
@@ -54,6 +53,8 @@ tasks:
             target_repo: "{{ .utils.build.target_repo }}"
             target_ref: "deliverables_{{ .utils.branch }}"
         - task: utils.build.commands.build
+          arguments:
+            build_cmd: "{{ .build_cmd }}"
         - task: utils.build.commands.copy_source_to_target
         - task: utils.build.commands.push_target
           arguments:
@@ -71,6 +72,8 @@ tasks:
             target_repo: "{{ .utils.build.target_repo }}"
             target_ref: "deliverables_tags"
         - task: utils.build.commands.build
+          arguments:
+            build_cmd: "{{ .build_cmd }}"
         - task: utils.build.commands.copy_source_to_target
         - task: utils.build.commands.push_target
           arguments:
@@ -93,7 +96,7 @@ tasks:
     - name: target_ref
       type: string
       default: ""
-    - name: build
+    - name: build_cmd
       type: string
       default: "pwd"
     tasks:
@@ -106,7 +109,8 @@ tasks:
                 title: Prepare source
                 cmd: |
                   git clone -b {{ .source_ref }} --single-branch --depth 1 {{ .source_repo }} {{ .working_dir }}/source;
-                  git -C {{ .working_dir }}/source checkout {{ .source_ref }};
+                  cd {{ .working_dir }}/source;
+                  git checkout {{ .source_ref }};
 
           target:
             steps:
@@ -115,8 +119,14 @@ tasks:
                 title: Prepare target
                 cmd: |
                   git clone {{ .target_repo }} {{ .working_dir }}/target;
-                  git -C {{ .working_dir }}/target checkout {{ .target_ref }} 2>/dev/null || (git -C {{ .working_dir }}/target checkout -b {{ .target_ref }}; \
-                    git -C {{ .working_dir }}/target push origin {{ .target_ref }})
+                  cd {{ .working_dir }}/target;
+
+                  git checkout {{ .target_ref }} 2>/dev/null \
+                  || \
+                    (
+                      git checkout -b {{ .target_ref }};
+                      git push origin {{ .target_ref }};
+                    )
 
       build:
         steps:
@@ -125,7 +135,7 @@ tasks:
             title: Build in source dir
             cmd: |
               cd {{ .working_dir }}/source;
-              {{ .build }}
+              {{ .build_cmd }}
 
       copy_source_to_target:
         steps:
@@ -166,4 +176,5 @@ tasks:
               cd {{ .working_dir }}/target;
               git tag "{{ .target_ref }}"
               git push origin {{ .target_ref }}
+
 

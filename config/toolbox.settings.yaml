@@ -4,8 +4,28 @@ config:
       params:
         config_context_prefix:
         - cicd
+        - .toolbox.cicd
         env:
-          VARIANT_CONFIG_DIR: toolbox/config/rendered/
+          VARIANT_CONFIG_DIR: .
+
+      build:
+        params:
+          config_context_prefix:
+          - .toolbox.cicd.build
+        deliverables:
+          params:
+            cmd: build/deliverables
+        direct:
+          params:
+            cmd: build/direct
+      deploy:
+        params:
+          config_context_prefix:
+          - .toolbox.cicd.deploy
+        deliverables:
+          params:
+            cmd: deploy/deliverables
+
       component:
         params:
           source: github.com/aroq/toolbox-cicd-build
@@ -19,7 +39,9 @@ config:
               config_context_prefix:
               - component
               - build
+
 tools:
   cicd/component/build:
     from:
     - config.libraries.cicd.component.commands.build
+
