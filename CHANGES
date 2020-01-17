@@ -1,3 +1,9 @@
+Version 0.1.2:
+ - Add deploy utils
+ - Refactor utils
+ - Add utils-build.yaml
+ - Add target_repo for the build process
+
 Version 0.1.1:
  - Remove unneeded file
  - Fix gitlab ci token env var
