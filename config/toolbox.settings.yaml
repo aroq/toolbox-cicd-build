@@ -25,9 +25,7 @@ config:
         params:
           config_context_prefix:
           - .toolbox.cicd.deploy
-        deliverables:
-          params:
-            cmd: deploy/deliverables
+          cmd: deploy
 
       component:
         params:
