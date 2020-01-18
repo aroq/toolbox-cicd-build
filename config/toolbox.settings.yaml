@@ -1,5 +1,8 @@
 config:
   libraries:
+    params:
+      config_context_prefix:
+      - .toolbox
     cicd:
       params:
         config_context_prefix:
@@ -44,4 +47,5 @@ tools:
   cicd/component/build:
     from:
     - config.libraries.cicd.component.commands.build
+
 
