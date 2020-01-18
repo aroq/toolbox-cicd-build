@@ -100,5 +100,5 @@ tasks:
               arguments:
                 title: "Ansistrano deploy {{ .deploy_environment }}"
                 playbook: "deployWithAnsistrano.yml"
-                inventory_file: "{{ .deploy_environment }}.inventory.yaml"
+                inventory_file: "inventory/{{ .deploy_environment }}.inventory.yaml"
                 vars: 'ansistrano_deploy_to={{ .ansistrano_deploy_to }} ansistrano_deploy_from={{ .artifact_dir_prefix }}{{ .artifact_dir }}/{{ .artifact_file }} deploy_environment={{ .deploy_environment }} ansistrano_deploy_via={{ .ansistrano_deploy_via }}'
