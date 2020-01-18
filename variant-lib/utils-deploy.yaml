@@ -1,9 +1,10 @@
 #!/usr/bin/env variant
 # vi: ft=yaml
+#
 
 parameters:
-- name: working_dir
-  default: .artifact
+- name: artifact_file
+  default: "artifact.tar.gz"
 
 tasks:
   artifact_repo:
@@ -23,6 +24,11 @@ tasks:
     - name: artifact_ref
       type: string
       default: ""
+    - name: working_dir
+      default: .artifact
+    - name: artifact_dir
+      default: .artifact
+
     tasks:
       prepare:
         tasks:
@@ -35,7 +41,7 @@ tasks:
                   rm -fR {{ .working_dir }}/artifact
                   git clone --quiet -b {{ .artifact_ref }} --single-branch --depth 1 {{ .artifact_repo }} {{ .working_dir }}/artifact > /dev/null;
                   rm -rf {{ .working_dir }}/artifact/.git;
-                  tar -czf {{ .working_dir }}/artifact.tar.gz -C {{ .working_dir }}/artifact .;
+                  tar -czf {{ .artifact_dir }}/{{ .artifact_file }} -C {{ .working_dir }}/artifact .;
   tools:
     tasks:
       ansible:
@@ -68,16 +74,20 @@ tasks:
                 title: "{{ .title }}"
                 cmd: |
                   cd {{ .ansible_dir }};
-                  export ANSIBLE_CONFIG='{{ .ansible_config_file }}';
-                  export ANSIBLE_ROLES_PATH='/root/.ansible/roles';
-                  {{ .executable }} {{ .playbook }} -i {{ .inventory_file }} -e '{{ .vars }}';
+                  ANSIBLE_CONFIG='{{ .ansible_config_file }}' \
+                  ANSIBLE_ROLES_PATH='/root/.ansible/roles' \
+                  {{ .executable }} {{ .playbook }} \
+                    -i {{ .inventory_file }} \
+                    -e '{{ .vars }}';
       ansistrano:
         parameters:
+        - name: artifact_dir
+          default: .artifact
         - name: ansistrano_deploy_to
           type: string
-        - name: ansistrano_deploy_from
+        - name: artifact_dir_prefix
           type: string
-          default: "../../{{ .working_dir }}/artifact.tar.gz"
+          default: "../"
         - name: deploy_environment
           type: string
         - name: ansistrano_deploy_via
@@ -86,9 +96,9 @@ tasks:
         tasks:
           deploy:
             steps:
-            - task: utils.deploy.tools.ansible.playbook
+            - task: cicd.deploy.tools.ansible.playbook
               arguments:
                 title: "Ansistrano deploy {{ .deploy_environment }}"
                 playbook: "deployWithAnsistrano.yml"
                 inventory_file: "{{ .deploy_environment }}.inventory.yaml"
-                vars: 'ansistrano_deploy_to={{ .ansistrano_deploy_to }} ansistrano_deploy_from={{ .ansistrano_deploy_from }} deploy_environment={{ .deploy_environment }} ansistrano_deploy_via={{ .ansistrano_deploy_via }}'
+                vars: 'ansistrano_deploy_to={{ .ansistrano_deploy_to }} ansistrano_deploy_from={{ .artifact_dir_prefix }}{{ .artifact_dir }}/{{ .artifact_file }} deploy_environment={{ .deploy_environment }} ansistrano_deploy_via={{ .ansistrano_deploy_via }}'

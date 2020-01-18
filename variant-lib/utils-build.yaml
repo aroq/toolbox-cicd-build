@@ -30,12 +30,12 @@ tasks:
 
   deliverables:
     parameters:
-    - name: utils.build.source_repo
+    - name: cicd.build.source_repo
       type: string
-    - name: utils.build.target_repo
+    - name: cicd.build.target_repo
       type: string
       description: Current repo address
-    - name: utils.branch
+    - name: cicd.branch
       type: string
       description: Current repo address
     - name: build_cmd
@@ -43,44 +43,44 @@ tasks:
     tasks:
       branch:
         steps:
-        - task: utils.init
-        - task: utils.build.commands.prepare.source
+        - task: cicd.init
+        - task: cicd.build.commands.prepare.source
           arguments:
-            source_repo: "{{ .utils.build.source_repo }}"
-            source_ref: "{{ .utils.branch }}"
-        - task: utils.build.commands.prepare.target
+            source_repo: "{{ .cicd.build.source_repo }}"
+            source_ref: "{{ .cicd.branch }}"
+        - task: cicd.build.commands.prepare.target
           arguments:
-            target_repo: "{{ .utils.build.target_repo }}"
-            target_ref: "deliverables_{{ .utils.branch }}"
-        - task: utils.build.commands.build
+            target_repo: "{{ .cicd.build.target_repo }}"
+            target_ref: "deliverables_{{ .cicd.branch }}"
+        - task: cicd.build.commands.build
           arguments:
             build_cmd: "{{ .build_cmd }}"
-        - task: utils.build.commands.copy_source_to_target
-        - task: utils.build.commands.push_target
+        - task: cicd.build.commands.copy_source_to_target
+        - task: cicd.build.commands.push_target
           arguments:
-            target_ref: "deliverables_{{ .utils.branch }}"
+            target_ref: "deliverables_{{ .cicd.branch }}"
 
       tag:
         steps:
-        - task: utils.init
-        - task: utils.build.commands.prepare.source
+        - task: cicd.init
+        - task: cicd.build.commands.prepare.source
           arguments:
-            source_repo: "{{ .utils.build.source_repo }}"
-            source_ref: "{{ .utils.branch }}"
-        - task: utils.build.commands.prepare.target
+            source_repo: "{{ .cicd.build.source_repo }}"
+            source_ref: "{{ .cicd.branch }}"
+        - task: cicd.build.commands.prepare.target
           arguments:
-            target_repo: "{{ .utils.build.target_repo }}"
+            target_repo: "{{ .cicd.build.target_repo }}"
             target_ref: "deliverables_tags"
-        - task: utils.build.commands.build
+        - task: cicd.build.commands.build
           arguments:
             build_cmd: "{{ .build_cmd }}"
-        - task: utils.build.commands.copy_source_to_target
-        - task: utils.build.commands.push_target
+        - task: cicd.build.commands.copy_source_to_target
+        - task: cicd.build.commands.push_target
           arguments:
             target_ref: "deliverables_tags"
-        - task: utils.build.commands.push_tag
+        - task: cicd.build.commands.push_tag
           arguments:
-            target_ref: "stable--{{ .utils.branch }}"
+            target_ref: "stable--{{ .cicd.branch }}"
 
   commands:
     parameters:
@@ -176,5 +176,3 @@ tasks:
               cd {{ .working_dir }}/target;
               git tag "{{ .target_ref }}"
               git push origin {{ .target_ref }}
-
-
