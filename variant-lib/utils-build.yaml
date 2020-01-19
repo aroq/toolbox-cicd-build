@@ -43,7 +43,12 @@ tasks:
     tasks:
       branch:
         steps:
-        - task: cicd.init
+        - task: core.exec
+          arguments:
+            title: Initialization
+            cmd: |
+              rm -fR {{ .working_dir }}
+              mkdir -p {{ .working_dir }}
         - task: cicd.build.commands.prepare.source
           arguments:
             source_repo: "{{ .cicd.build.source_repo }}"
@@ -62,7 +67,12 @@ tasks:
 
       tag:
         steps:
-        - task: cicd.init
+        - task: core.exec
+          arguments:
+            title: Initialization
+            cmd: |
+              rm -fR {{ .working_dir }}
+              mkdir -p {{ .working_dir }}
         - task: cicd.build.commands.prepare.source
           arguments:
             source_repo: "{{ .cicd.build.source_repo }}"
