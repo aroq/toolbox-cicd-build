@@ -1,0 +1,44 @@
+#!/usr/bin/env variant
+# vi: ft=yaml
+
+bindParamsFromEnv: true
+parameters:
+- name: BUILD_DIR
+  type: string
+  default: "."
+
+- name: build.direct.cmd
+  type: string
+  default: |
+    echo "Please provide 'build.direct.cmd' parameter in the configuration file"
+tasks:
+  core:
+    import: toolbox/.toolbox/deps/toolbox/variant-lib/utils.yaml
+  utils:
+    tasks:
+      git:
+        import: toolbox/.toolbox/deps/toolbox-git/variant-lib/utils.yaml
+
+  pull:
+    steps:
+    - task: utils.git.config.identity
+    - task: core.exec
+      arguments:
+        title: Pull code in {{ .BUILD_DIR }} directory
+        cmd: |
+          cd {{ .BUILD_DIR }};
+          git pull --quiet;
+
+  build:
+    steps:
+    - task: core.exec
+      arguments:
+        title: Build code in {{ .BUILD_DIR }} directory
+        cmd: |
+          cd {{ .BUILD_DIR }};
+          {{ .build.direct.cmd }}
+
+steps:
+- task: pull
+- task: build
+

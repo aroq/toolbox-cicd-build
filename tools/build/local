@@ -1,0 +1,23 @@
+#!/usr/bin/env variant
+# vi: ft=yaml
+
+parameters:
+- name: build.local.cmd
+  type: string
+  default: |
+    echo "Please provide 'build.local.cmd' parameter in the configuration file"
+
+tasks:
+  core:
+    import: toolbox/.toolbox/deps/toolbox/variant-lib/utils.yaml
+
+  build:
+    steps:
+    - task: core.exec
+      arguments:
+        title: Build code in the current directory
+        cmd: |
+          {{ .build.local.cmd }}
+
+steps:
+- task: build
