@@ -28,6 +28,14 @@ tasks:
         fi
       fi
 
+  branch:
+    script: |
+      if [ -z ${CI_COMMIT_REF_NAME+x} ]; then
+        git symbolic-ref -q --short HEAD || git describe --tags --exact-match
+      else
+        echo ${CI_COMMIT_REF_NAME}
+      fi
+
   deliverables:
     parameters:
     - name: cicd.build.source_repo
@@ -35,7 +43,7 @@ tasks:
     - name: cicd.build.target_repo
       type: string
       description: Current repo address
-    - name: cicd.branch
+    - name: cicd.build.branch
       type: string
       description: Current repo address
     - name: build_cmd
@@ -52,18 +60,18 @@ tasks:
         - task: cicd.build.commands.prepare.source
           arguments:
             source_repo: "{{ .cicd.build.source_repo }}"
-            source_ref: "{{ .cicd.branch }}"
+            source_ref: "{{ .cicd.build.branch }}"
         - task: cicd.build.commands.prepare.target
           arguments:
             target_repo: "{{ .cicd.build.target_repo }}"
-            target_ref: "deliverables_{{ .cicd.branch }}"
+            target_ref: "deliverables_{{ .cicd.build.branch }}"
         - task: cicd.build.commands.build
           arguments:
             build_cmd: "{{ .build_cmd }}"
         - task: cicd.build.commands.copy_source_to_target
         - task: cicd.build.commands.push_target
           arguments:
-            target_ref: "deliverables_{{ .cicd.branch }}"
+            target_ref: "deliverables_{{ .cicd.build.branch }}"
 
       tag:
         steps:
@@ -76,7 +84,7 @@ tasks:
         - task: cicd.build.commands.prepare.source
           arguments:
             source_repo: "{{ .cicd.build.source_repo }}"
-            source_ref: "{{ .cicd.branch }}"
+            source_ref: "{{ .cicd.build.branch }}"
         - task: cicd.build.commands.prepare.target
           arguments:
             target_repo: "{{ .cicd.build.target_repo }}"
@@ -90,7 +98,7 @@ tasks:
             target_ref: "deliverables_tags"
         - task: cicd.build.commands.push_tag
           arguments:
-            target_ref: "stable--{{ .cicd.branch }}"
+            target_ref: "stable--{{ .cicd.build.branch }}"
 
   commands:
     parameters:
@@ -186,3 +194,4 @@ tasks:
               cd {{ .working_dir }}/target;
               git tag "{{ .target_ref }}"
               git push origin {{ .target_ref }}
+
