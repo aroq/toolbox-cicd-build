@@ -15,9 +15,9 @@ tasks:
 
   branch:
     steps:
-    - task: utils.build.deliverables.branch
+    - task: cicd.build.deliverables.branch
 
   tag:
     steps:
-    - task: utils.build.deliverables.tag
+    - task: cicd.build.deliverables.tag
 
