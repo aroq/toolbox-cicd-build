@@ -1,6 +1,9 @@
 #!/usr/bin/env variant
 # vi: ft=yaml
 
+autoenv: true
+bindParamsFromEnv: true
+
 parameters:
 - name: working_dir
   default: .docroot
