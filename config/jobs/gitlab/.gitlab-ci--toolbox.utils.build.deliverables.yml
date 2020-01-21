@@ -1,0 +1,7 @@
+.build-deliverables:
+  stage: deliverables
+  allow_failure: true
+  variables:
+    DOCKER_RUN_TTY: -i
+  script:
+    - toolbox/bin/build/deliverables source branch
