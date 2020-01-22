@@ -1,7 +1,18 @@
-.build-deliverables:
+.build-deliverables-branch:
   stage: deliverables
   allow_failure: true
   variables:
     DOCKER_RUN_TTY: -i
   script:
     - toolbox/bin/build/deliverables source branch
+
+.build-deliverables-tag:
+  stage: deliverables
+  allow_failure: true
+  variables:
+    DOCKER_RUN_TTY: -i
+  script:
+    - toolbox/bin/build/deliverables source tag
+  tags:
+    - docker-privileged
+
