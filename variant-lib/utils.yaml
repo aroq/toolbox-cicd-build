@@ -5,7 +5,7 @@ autoenv: true
 bindParamsFromEnv: true
 
 parameters:
-- name: working_dir
+- name: WORKING_DIR
   default: .docroot
 
 tasks:
@@ -58,8 +58,8 @@ tasks:
           arguments:
             title: Initialization
             cmd: |
-              rm -fR {{ .working_dir }}
-              mkdir -p {{ .working_dir }}
+              rm -fR {{ .WORKING_DIR }}
+              mkdir -p {{ .WORKING_DIR }}
         - task: cicd.build.commands.prepare.source
           arguments:
             source_repo: "{{ .cicd.build.source_repo }}"
@@ -67,14 +67,15 @@ tasks:
         - task: cicd.build.commands.prepare.target
           arguments:
             target_repo: "{{ .cicd.build.target_repo }}"
-            target_ref: "deliverables_{{ .cicd.build.branch }}"
+            source_ref: "{{ .cicd.build.branch }}"
+            target_ref: "{{ .DELIVERABLES_TARGET_BRANCH_PREFIX }}{{ .cicd.build.branch }}"
         - task: cicd.build.commands.build
           arguments:
             build_cmd: "{{ .build_cmd }}"
         - task: cicd.build.commands.copy_source_to_target
         - task: cicd.build.commands.push_target
           arguments:
-            target_ref: "deliverables_{{ .cicd.build.branch }}"
+            target_ref: "{{ .DELIVERABLES_TARGET_BRANCH_PREFIX }}{{ .cicd.build.branch }}"
 
       tag:
         steps:
@@ -82,8 +83,8 @@ tasks:
           arguments:
             title: Initialization
             cmd: |
-              rm -fR {{ .working_dir }}
-              mkdir -p {{ .working_dir }}
+              rm -fR {{ .WORKING_DIR }}
+              mkdir -p {{ .WORKING_DIR }}
         - task: cicd.build.commands.prepare.source
           arguments:
             source_repo: "{{ .cicd.build.source_repo }}"
@@ -91,17 +92,18 @@ tasks:
         - task: cicd.build.commands.prepare.target
           arguments:
             target_repo: "{{ .cicd.build.target_repo }}"
-            target_ref: "deliverables_tags"
+            source_ref: "{{ .cicd.build.branch }}"
+            target_ref: "{{ .DELIVERABLES_TARGET_BRANCH_PREFIX }}tags"
         - task: cicd.build.commands.build
           arguments:
             build_cmd: "{{ .build_cmd }}"
         - task: cicd.build.commands.copy_source_to_target
         - task: cicd.build.commands.push_target
           arguments:
-            target_ref: "deliverables_tags"
+            target_ref: "{{ .DELIVERABLES_TARGET_BRANCH_PREFIX }}tags"
         - task: cicd.build.commands.push_tag
           arguments:
-            target_ref: "stable--{{ .cicd.build.branch }}"
+            target_ref: "{{ .DELIVERABLES_TARGET_TAG_PREFIX }}{{ .cicd.build.branch }}"
 
   commands:
     parameters:
@@ -129,8 +131,8 @@ tasks:
               arguments:
                 title: Prepare source
                 cmd: |
-                  git clone -b {{ .source_ref }} --single-branch --depth 1 {{ .source_repo }} {{ .working_dir }}/source;
-                  cd {{ .working_dir }}/source;
+                  git clone -b {{ .source_ref }} --single-branch --depth 1 {{ .source_repo }} {{ .WORKING_DIR }}/source;
+                  cd {{ .WORKING_DIR }}/source;
                   git checkout {{ .source_ref }};
 
           target:
@@ -139,23 +141,27 @@ tasks:
               arguments:
                 title: Prepare target
                 cmd: |
-                  git clone {{ .target_repo }} {{ .working_dir }}/target;
-                  cd {{ .working_dir }}/target;
-
-                  git checkout {{ .target_ref }} 2>/dev/null \
-                  || \
-                    (
-                      git checkout -b {{ .target_ref }};
-                      git push origin {{ .target_ref }};
-                    )
-
+                  set -euo pipefail
+                  (
+                    git ls-remote --exit-code --heads {{ .target_repo }} {{ .target_ref }} && \
+                    git clone -b {{ .target_ref }} --single-branch --depth 1 {{ .target_repo }} {{ .WORKING_DIR }}/target && \
+                    cd {{ .WORKING_DIR }}/target && \
+                    git checkout {{ .target_ref }} && \
+                    echo "Remote branch {{ .target_ref }} was found"
+                  ) || \
+                  (
+                    echo "Remote branch {{ .target_ref }} was not found"
+                    git clone -b {{ .source_ref }} --single-branch --depth 1 {{ .target_repo }} {{ .WORKING_DIR }}/target;
+                    cd {{ .WORKING_DIR }}/target;
+                    git checkout -b {{ .target_ref }};
+                  )
       build:
         steps:
         - task: core.exec
           arguments:
             title: Build in source dir
             cmd: |
-              cd {{ .working_dir }}/source;
+              cd {{ .WORKING_DIR }}/source;
               {{ .build_cmd }}
 
       copy_source_to_target:
@@ -164,7 +170,7 @@ tasks:
           arguments:
             title: Copy from source dir to target dir
             cmd: |
-              cd {{ .working_dir }}/target;
+              cd {{ .WORKING_DIR }}/target;
 
               # Find all first level files & directories except ".git" and remove it
               fd -H -I -E .git '^.*$' -d 1 --exec rm -rf {};
@@ -172,7 +178,14 @@ tasks:
               cd ../..;
 
               # Copy all files except ".git" from source dir to target dir
-              rsync -a --exclude '.git' {{ .working_dir }}/source/. {{ .working_dir }}/target;
+              rsync -a \
+                --exclude=".git" \
+                {{ .WORKING_DIR }}/source/{{ .DELIVERABLES_SOURCE_DIR_PATTERN }} \
+                {{ .WORKING_DIR }}/target;
+
+              # Save current revision into REVISION_SOURCE file
+              rm -f {{ .WORKING_DIR }}/target/REVISION_SOURCE
+              git rev-parse --short HEAD > {{ .WORKING_DIR }}/target/REVISION_SOURCE
 
       push_target:
         steps:
@@ -180,11 +193,10 @@ tasks:
           arguments:
             title: "Push deliverables to the target branch \"{{ .target_ref }}\""
             cmd: |
-              cd {{ .working_dir }}/target;
+              cd {{ .WORKING_DIR }}/target;
               # TODO: Check if there are any changes. No need to push if no changes.
               git add --all;
               git commit --allow-empty --quiet --no-verify -m "Deliverables update";
-              git pull origin {{ .target_ref }};
               git push origin {{ .target_ref }};
 
 
@@ -194,7 +206,8 @@ tasks:
           arguments:
             title: "Push deliverables to the target tag \"{{ .target_ref }}\""
             cmd: |
-              cd {{ .working_dir }}/target;
+              cd {{ .WORKING_DIR }}/target;
               git tag "{{ .target_ref }}"
               git push origin {{ .target_ref }}
+
 
